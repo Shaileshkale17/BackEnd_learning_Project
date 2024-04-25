@@ -126,3 +126,47 @@ app.listen(3000, () => {
 });
 
 ```
+
+# ApiError Class
+
+The `ApiError` class is designed to handle errors that occur within an API context. It extends the built-in `Error` class and allows you to specify an HTTP status code, a message, and any additional errors that occurred.
+
+## Usage
+
+To create a new `ApiError` instance, you can use the constructor function and provide the following parameters:
+
+- 1. `statusCode`: The HTTP status code associated with the error.
+- 2. `message` (optional): A descriptive message explaining the error. If not provided, a default message of `"Something went wrong"` will be used.
+- 3. `errors` (optional): An array containing any additional errors that occurred.
+- 4. `stack` (optional): The stack trace of the error.
+
+```
+const { ApiError } = require('./ApiError');
+
+const statusCode = 404;
+const message = 'Resource not found';
+const errors = [{ field: 'id', message: 'Invalid ID' }];
+
+const error = new ApiError(statusCode, message, errors);
+
+```
+
+### Properties
+
+- `statusCode`: The HTTP status code associated with the error.
+- `message`: A descriptive message explaining the error.
+- `data`: Additional data associated with the error (currently set to `null`).
+- `errors`: An array containing any additional errors that occurred.
+- `success`: Indicates whether the operation was successful (`false` for errors).
+
+### Example
+
+```
+try {
+  // Some code that might throw an error
+} catch (error) {
+  const apiError = new ApiError(500, 'Internal Server Error', [], error.stack);
+  console.error(apiError);
+}
+
+```
