@@ -219,3 +219,81 @@ console.log(response);
 # Data model Image
 
 ![Data Model Image](https://lh3.googleusercontent.com/pw/AP1GczOhkjYsdddMwe153GrEjn6uift8O8_TxJBZXv2rZdWkcjd1fH8I5KQ8B-aQvInW42PBlwXrYyvt6ofFpT72Ki8SUKTty_3cID82fn9hqgbAa4D7vPSIPB--tyVj0M3YBjviLQObMbT3i5L1XWs6u2Fx=w1324-h730-s-no-gm?authuser=0)
+
+# User Model
+
+## Create User model Schema
+
+```
+const userschema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    ........
+  },
+  { timestamps: true }
+);
+```
+
+## Passwords Modified in `Hash Code`
+
+```
+userschema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = bcrypt.hash(this.password, n);
+  next();
+});
+
+```
+
+## Passwords chack To `Hash Code` in `user sending Password`
+
+```
+userschema.method.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+```
+
+## Generating `Access Token`
+
+```
+userschema.method.generateAccessToken = function () {
+  return Jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      username: this.username,
+      fullname: this.fullname,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    }
+  );
+};
+
+```
+
+## Generating `Refresh Token`
+
+```
+userschema.method.generateRefreshToken = function () {
+  return Jwt.sign(
+    {
+      _id: this._id,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    }
+  );
+};
+
+```
