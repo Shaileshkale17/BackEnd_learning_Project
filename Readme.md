@@ -213,3 +213,9 @@ console.log(response);
 }
 
 ```
+
+---
+
+# Data model Image
+
+![Data Model Image](https://lh3.googleusercontent.com/pw/AP1GczOhkjYsdddMwe153GrEjn6uift8O8_TxJBZXv2rZdWkcjd1fH8I5KQ8B-aQvInW42PBlwXrYyvt6ofFpT72Ki8SUKTty_3cID82fn9hqgbAa4D7vPSIPB--tyVj0M3YBjviLQObMbT3i5L1XWs6u2Fx=w1324-h730-s-no-gm?authuser=0)
