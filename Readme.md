@@ -170,3 +170,46 @@ try {
 }
 
 ```
+
+# ApiResponse Class
+
+The `ApiResponse` class is designed to encapsulate the response format for HTTP requests in JavaScript applications. It provides a standardized structure for conveying the status, data, and message of an API response.
+
+## Usage
+
+To use the `ApiResponse` class, simply instantiate it with the appropriate parameters:
+
+```
+const response = new ApiResponse(statusCode, data, message);
+
+```
+
+- `statusCode`: The HTTP status code of the response.
+- `data`: The payload of the response.
+- `message`: An optional message describing the response status. Defaults to `"success"` if not provided.
+
+## Example
+
+```
+const response = new ApiResponse(200, { id: 1, name: "John Doe" });
+console.log(response);
+
+```
+
+## Properties
+
+- `statusCode`: The HTTP status code of the response.
+- `data`: The payload of the response.
+- `message`: A message describing the response status.
+- `success`: A boolean indicating whether the response is successful (`true` for status codes < 400).
+
+```
+
+{
+  statusCode: 200,
+  data: { id: 1, name: "John Doe" },
+  message: "success",
+  success: true
+}
+
+```
