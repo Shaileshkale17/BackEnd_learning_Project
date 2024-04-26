@@ -8,7 +8,7 @@
 
 The `index.js` file contains code for connecting to the database and starting the server.
 
-```
+```javascript
 (async () => {
   try {
     await mongoose.connect(`${process.env.MONGODB_API}/${DB_NAME}`);
@@ -24,14 +24,13 @@ The `index.js` file contains code for connecting to the database and starting th
     throw error;
   }
 })();
-
 ```
 
 ## src/db/index.js
 
 The `index.js` file in the `src/db` directory contains code for connecting to the database.
 
-```
+```javascript
 import mongoose from "mongoose";
 import { DB_NAME } from "../constants.js";
 import dotenv from "dotenv";
@@ -49,7 +48,6 @@ export const ConnectDB = async () => {
     process.exit(1);
   }
 };
-
 ```
 
 ## Instructions
@@ -72,21 +70,19 @@ There are two implementations of the asyncHandler function provided:
 
 ### First Implementation:
 
-```
+```javascript
 const asyncHandler = (requestHandler) => {
   (req, res, next) => {
     Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err));
   };
 };
-
-
 ```
 
 This implementation takes a requestHandler function as an argument and returns a new function that wraps it. Inside this wrapper function, the original requestHandler is executed within a Promise. If an error occurs during the execution of the requestHandler, it is caught and passed to the next middleware function.
 
 ### Second Implementation:
 
-```
+```javascript
 const asyncHandler = (fn) => async (req, res, next) => {
   try {
     await fn(req, res, next);
@@ -96,8 +92,6 @@ const asyncHandler = (fn) => async (req, res, next) => {
       .json({ success: false, message: error.message });
   }
 };
-
-
 ```
 
 This alternative implementation achieves the same purpose but utilizes async/await syntax for better readability. It takes an asynchronous function fn as an argument and returns a new asynchronous function that wraps it. Inside this wrapper function, the fn is awaited, and any errors are caught and handled by sending an appropriate response to the client.
@@ -106,9 +100,9 @@ This alternative implementation achieves the same purpose but utilizes async/awa
 
 Here's an example of how you can use the asyncHandler function with an Express route handler:
 
-```
-const express = require('express');
-const asyncHandler = require('./asyncHandler');
+```javascript
+const express = require("express");
+const asyncHandler = require("./asyncHandler");
 
 const app = express();
 
@@ -119,12 +113,11 @@ const asyncRouteHandler = asyncHandler(async (req, res) => {
   res.json({ success: true, data });
 });
 
-app.get('/route', asyncRouteHandler);
+app.get("/route", asyncRouteHandler);
 
 app.listen(3000, () => {
-  console.log('Server is running on port 3000');
+  console.log("Server is running on port 3000");
 });
-
 ```
 
 # ApiError Class
@@ -140,15 +133,14 @@ To create a new `ApiError` instance, you can use the constructor function and pr
 - 3. `errors` (optional): An array containing any additional errors that occurred.
 - 4. `stack` (optional): The stack trace of the error.
 
-```
-const { ApiError } = require('./ApiError');
+```javascript
+const { ApiError } = require("./ApiError");
 
 const statusCode = 404;
-const message = 'Resource not found';
-const errors = [{ field: 'id', message: 'Invalid ID' }];
+const message = "Resource not found";
+const errors = [{ field: "id", message: "Invalid ID" }];
 
 const error = new ApiError(statusCode, message, errors);
-
 ```
 
 ### Properties
@@ -161,14 +153,13 @@ const error = new ApiError(statusCode, message, errors);
 
 ### Example
 
-```
+```javascript
 try {
   // Some code that might throw an error
 } catch (error) {
-  const apiError = new ApiError(500, 'Internal Server Error', [], error.stack);
+  const apiError = new ApiError(500, "Internal Server Error", [], error.stack);
   console.error(apiError);
 }
-
 ```
 
 # ApiResponse Class
@@ -179,9 +170,8 @@ The `ApiResponse` class is designed to encapsulate the response format for HTTP 
 
 To use the `ApiResponse` class, simply instantiate it with the appropriate parameters:
 
-```
+```javascript
 const response = new ApiResponse(statusCode, data, message);
-
 ```
 
 - `statusCode`: The HTTP status code of the response.
@@ -190,10 +180,9 @@ const response = new ApiResponse(statusCode, data, message);
 
 ## Example
 
-```
+```javascript
 const response = new ApiResponse(200, { id: 1, name: "John Doe" });
 console.log(response);
-
 ```
 
 ## Properties
@@ -203,15 +192,13 @@ console.log(response);
 - `message`: A message describing the response status.
 - `success`: A boolean indicating whether the response is successful (`true` for status codes < 400).
 
-```
-
+```json
 {
-  statusCode: 200,
-  data: { id: 1, name: "John Doe" },
-  message: "success",
-  success: true
+  "statusCode": 200,
+  "data": { "id": 1, "name": "John Doe" },
+  "message": "success",
+  "success": true
 }
-
 ```
 
 ---
@@ -224,7 +211,7 @@ console.log(response);
 
 ## Create User model Schema
 
-```
+```javascript
 const userschema = new mongoose.Schema(
   {
     username: {
@@ -243,27 +230,25 @@ const userschema = new mongoose.Schema(
 
 ## Passwords Modified in `Hash Code`
 
-```
+```javascript
 userschema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = bcrypt.hash(this.password, n);
   next();
 });
-
 ```
 
 ## Passwords chack To `Hash Code` in `user sending Password`
 
-```
+```javascript
 userschema.method.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
-
 ```
 
 ## Generating `Access Token`
 
-```
+```javascript
 userschema.method.generateAccessToken = function () {
   return Jwt.sign(
     {
@@ -278,12 +263,11 @@ userschema.method.generateAccessToken = function () {
     }
   );
 };
-
 ```
 
 ## Generating `Refresh Token`
 
-```
+```javascript
 userschema.method.generateRefreshToken = function () {
   return Jwt.sign(
     {
@@ -295,7 +279,6 @@ userschema.method.generateRefreshToken = function () {
     }
   );
 };
-
 ```
 
 # file uploading in server side
@@ -316,7 +299,7 @@ npm install cloudinary
 
 ## Cloudinary setup API connection
 
-```
+```javascript
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
@@ -345,12 +328,11 @@ const uploadincloudinary = async (localFilePath) => {
 };
 
 export { uploadincloudinary };
-
 ```
 
 ## Multer Setup
 
-```
+```javascript
 import multer from "multer";
 
 const storage = multer.diskStorage({
@@ -362,7 +344,6 @@ const storage = multer.diskStorage({
      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     */
 
-
     cb(null, file.originalname + "-" + uniqueSuffix);
   },
 });
@@ -372,6 +353,6 @@ const upload = multer({ storage });
 
 ### **creting the file name by this function**
 
-```
-     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+```javascript
+const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
 ```
