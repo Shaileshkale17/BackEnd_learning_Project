@@ -70,7 +70,7 @@ The asyncHandler function is designed to simplify error handling in asynchronous
 
 There are two implementations of the asyncHandler function provided:
 
-###-First Implementation:
+### First Implementation:
 
 ```
 const asyncHandler = (requestHandler) => {
