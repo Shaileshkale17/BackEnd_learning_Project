@@ -372,7 +372,7 @@ app.use("/api/v1/users", userRouter);
 
 ```
 
-'user.routes.js' File
+`user.routes.js` File
 
 ```javascript
 import { Router } from "express";
@@ -385,7 +385,7 @@ router.route("/register").post(registerUser);
 export default router;
 ```
 
-'user.controller.js' File
+`user.controller.js` File
 
 ```javascript
 import { asyncHandler } from "../utils/asyncHandler.js";
