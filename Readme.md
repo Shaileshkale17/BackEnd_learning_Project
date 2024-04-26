@@ -356,3 +356,57 @@ const upload = multer({ storage });
 ```javascript
 const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
 ```
+
+# creating routers
+
+## Code Information
+
+`app.js` File
+
+```jaavscript
+import userRouter from "./routes/user.routes.js";
+
+// routes declarations
+
+app.use("/api/v1/users", userRouter);
+
+```
+
+'user.routes.js' File
+
+```javascript
+import { Router } from "express";
+import { registerUser } from "../controllers/user.controller.js";
+
+const router = Router();
+// router's setup function router
+router.route("/register").post(registerUser);
+
+export default router;
+```
+
+'user.controller.js' File
+
+```javascript
+import { asyncHandler } from "../utils/asyncHandler.js";
+
+const registerUser = asyncHandler(async (req, res) => {
+  await res.status(200).json({
+    message: "ok",
+  });
+});
+
+export { registerUser };
+```
+
+## Description
+
+This code structure represents a basic Express.js application for handling user registration. Here's a breakdown:
+
+- `app.js`: This is the main entry point of the application. It imports the user router from `user.routes.js` and mounts it at the endpoint /api/v1/users.
+
+- `user.routes.js`: This file defines the routes related to user operations. It imports the `Router` class from Express and the `registerUser` function from the user controller. It sets up a _POST_ route for user registration.
+
+- `user.controller.js`: This file contains the controller logic for handling user registration. It imports the `asyncHandler` utility function from `asyncHandler.js` to handle asynchronous operations. The registerUser function is an async function that returns a JSON response with a message indicating successful registration.
+
+- You may need to configure database connections or add additional logic for user registration, such as validation and data persistence.
