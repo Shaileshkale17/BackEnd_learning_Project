@@ -363,13 +363,12 @@ const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
 
 `app.js` File
 
-```jaavscript
+```javascript
 import userRouter from "./routes/user.routes.js";
 
 // routes declarations
 
 app.use("/api/v1/users", userRouter);
-
 ```
 
 `user.routes.js` File
