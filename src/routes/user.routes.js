@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   loginUser,
   logoutUser,
+  refreshAccessToken,
   registerUser,
 } from "../contrallers/user.contraller.js";
 import { upload } from "../middlewares/multer.niddlewares.js";
@@ -27,6 +28,7 @@ router.route("/login").post(loginUser);
 
 // secured routes
 
-router.route("/login").post(verifyJWT, logoutUser);
+router.route("/logout").post(verifyJWT, logoutUser);
+router.route("/Refresh-Token").post(verifyJWT, refreshAccessToken);
 
 export default router;
