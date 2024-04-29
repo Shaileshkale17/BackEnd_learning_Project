@@ -1,3 +1,4 @@
+import { response } from "express";
 import { User } from "../models/User.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/AppError.js";
@@ -23,6 +24,8 @@ const generateAccessAndRefereshToken = async (userId) => {
     );
   }
 };
+
+// register User
 
 const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, password, username } = req.body;
@@ -82,6 +85,8 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "user regstered successfully"));
 });
 
+// login User
+
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
@@ -134,6 +139,8 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
+// logout User
+
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -158,6 +165,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
+
+// refresh Access Token
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRedreshToken =
@@ -192,7 +201,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", NewRefreshToken, options)
       .json(
-        ApiResponse(
+        new ApiResponse(
           200,
           { accessToken, refreshToken: NewRefreshToken },
           "AccessToken is required"
@@ -203,4 +212,194 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+// Change Current Password
+
+const ChangeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await User.findOne(req.user?._id);
+  const isPassworldCorrect = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPassworldCorrect) {
+    throw new ApiError(400, "Invalid old password");
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: true });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "Current user fetched successfully"));
+});
+
+// Update Account Details
+
+const UpdateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullname, email } = req.body;
+  if (!(fullname || email)) {
+    throw new ApiError(400, "All fields are required");
+  }
+  const user = User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullname,
+        email,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
+// Update User Avatar
+const UpdateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "avatar file is missing");
+  }
+
+  const avatar = await uploadincloudinary(avatarLocalPath);
+  if (!avatar.url) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password");
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, user, "avatar Image updated successfully"));
+});
+
+// UpdateUserCover
+
+const UpdateUserCover = asyncHandler(async (req, res) => {
+  const CoverLocalPath = req.file?.path;
+
+  if (!CoverLocalPath) {
+    throw new ApiError(400, "avatar file is missing");
+  }
+
+  const coverImage = await uploadincloudinary(CoverLocalPath);
+  if (!coverImage.url) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: coverImage.url,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password");
+  res
+    .status(200)
+    .json(new ApiResponse(200, user, "cover Image updated successfully"));
+});
+
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username?.trim()) {
+    throw new ApiError(400, "username is required");
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscription",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscription",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
+        channelSubscribedToCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+        $project: {
+          fullname: 1,
+          username: 1,
+          subscribersCount: 1,
+          channelSubscribedToCount: 1,
+          isSubscribed: 1,
+          avatar: 1,
+          coverImage: 1,
+          email: 1,
+        },
+      },
+    },
+  ]);
+  console.log("channel", channel);
+
+  if (!channel.length) {
+    throw new ApiError(404, "Channel does not exist");
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, channel[0], "User channel fetched successfully")
+    );
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  ChangeCurrentPassword,
+  getCurrentUser,
+  UpdateAccountDetails,
+  UpdateUserAvatar,
+  UpdateUserCover,
+  getUserChannelProfile,
+};
