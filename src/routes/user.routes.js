@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   ChangeCurrentPassword,
+  DeleteAccount,
   UpdateAccountDetails,
   UpdateUserAvatar,
   UpdateUserCover,
@@ -46,10 +47,13 @@ router
 
 router
   .route("/cover-image")
-  .patch(verifyJWT, upload.single("cover-image"), UpdateUserCover);
+  .patch(verifyJWT, upload.single("coverImage"), UpdateUserCover);
 
-router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
+router
+  .route("/channel-profile/:username")
+  .get(verifyJWT, getUserChannelProfile);
 
 router.route("/history").get(verifyJWT, getwhatchHistory);
+router.route("/delete-account/:id").delete(DeleteAccount);
 
 export default router;

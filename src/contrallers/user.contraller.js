@@ -16,7 +16,6 @@ const generateAccessAndRefereshToken = async (userId) => {
     const refreshToken = await user.generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
-    console.log({ accessToken, refreshToken });
     return { accessToken, refreshToken };
   } catch (error) {
     throw new ApiError(
@@ -30,7 +29,6 @@ const generateAccessAndRefereshToken = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, password, username } = req.body;
-  console.log(`register ${fullname} ${email} ${password} ${username} `);
   /*first type check is Empty
   if (fullname === "") {
     throw new ApiError(400,"full name required");
@@ -442,6 +440,29 @@ const getwhatchHistory = asyncHandler(async (req, res) => {
       )
     );
 });
+
+const DeleteAccount = asyncHandler(async (req, res) => {
+  // user is not allowed to delete accounts
+  // db.deleteAccount = true
+  // response from send uaer account
+  const { id } = req.params;
+  if (!id) {
+    throw new ApiError(400, "Invalid user id");
+  }
+  await User.findByIdAndDelete(id);
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(204)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(204, {}, "User deleted successfully"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -454,4 +475,5 @@ export {
   UpdateUserCover,
   getUserChannelProfile,
   getwhatchHistory,
+  DeleteAccount,
 };
