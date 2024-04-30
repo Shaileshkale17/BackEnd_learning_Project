@@ -18,6 +18,7 @@ import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
 const router = Router();
 // router's setup function router
+// * register routes
 router.route("/register").post(
   upload.fields([
     {
@@ -32,28 +33,43 @@ router.route("/register").post(
   registerUser
 );
 
+// * Login routes
 router.route("/login").post(loginUser);
 
-// secured routes
-
+// * Logout routes
 router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/Refresh-Token").post(verifyJWT, refreshAccessToken);
+
+// * Refresh Token routes
+router.route("/refresh-token").post(verifyJWT, refreshAccessToken);
+
+//* Change Password routes
 router.route("/change-password").post(verifyJWT, ChangeCurrentPassword);
+
+//* Change user routes
 router.route("/current-user").get(verifyJWT, getCurrentUser);
+
+//* Update user  details routes
 router.route("/update-account").patch(verifyJWT, UpdateAccountDetails);
+
+//* Update user avatar routes
 router
   .route("/avatar")
   .patch(verifyJWT, upload.single("avatar"), UpdateUserAvatar);
 
+//* cover image  update routes
 router
   .route("/cover-image")
   .patch(verifyJWT, upload.single("coverImage"), UpdateUserCover);
 
+//* channel Profile routes
 router
   .route("/channel-profile/:username")
   .get(verifyJWT, getUserChannelProfile);
 
+//* channel History routes
 router.route("/history").get(verifyJWT, getwhatchHistory);
+
+//* delete account routes
 router.route("/delete-account/:id").delete(DeleteAccount);
 
 export default router;

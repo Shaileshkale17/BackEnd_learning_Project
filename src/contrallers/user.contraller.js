@@ -193,17 +193,19 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       secure: true,
     };
 
-    const { accessToken, NewRefreshToken } =
-      await generateAccessAndRefereshToken(user._id);
+    const { accessToken, refreshToken } = await generateAccessAndRefereshToken(
+      user._id
+    );
+
     return res
       .status(200)
       .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", NewRefreshToken, options)
+      .cookie("refreshToken", refreshToken, options)
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: NewRefreshToken },
-          "AccessToken is required"
+          { accessToken, refreshToken },
+          "Access Token is Updated successfully"
         )
       );
   } catch (error) {
@@ -217,13 +219,12 @@ const ChangeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const user = await User.findOne(req.user?._id);
   const isPassworldCorrect = await user.isPasswordCorrect(oldPassword);
-
   if (!isPassworldCorrect) {
     throw new ApiError(400, "Invalid old password");
   }
 
   user.password = newPassword;
-  await user.save({ validateBeforeSave: true });
+  await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
@@ -240,10 +241,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const UpdateAccountDetails = asyncHandler(async (req, res) => {
   const { fullname, email } = req.body;
+
   if (!(fullname || email)) {
     throw new ApiError(400, "All fields are required");
   }
-  const user = User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -321,49 +323,52 @@ const UpdateUserCover = asyncHandler(async (req, res) => {
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-  const { username } = req.params;
+  try {
+    const { username } = req.params;
+    if (!username?.trim()) {
+      throw new ApiError(400, "username is required");
+    }
 
-  if (!username?.trim()) {
-    throw new ApiError(400, "username is required");
-  }
-
-  const channel = await User.aggregate([
-    {
-      $match: {
-        username: username?.toLowerCase(),
-      },
-    },
-    {
-      $lookup: {
-        from: "subscription",
-        localField: "_id",
-        foreignField: "channel",
-        as: "subscribers",
-      },
-    },
-    {
-      $lookup: {
-        from: "subscription",
-        localField: "_id",
-        foreignField: "subscriber",
-        as: "subscribedTo",
-      },
-    },
-    {
-      $addFields: {
-        subscribersCount: {
-          $size: "$subscribers",
+    const channel = await User.aggregate([
+      {
+        $match: {
+          username: username?.toLowerCase(),
         },
-        channelSubscribedToCount: {
-          $size: "$subscribedTo",
+      },
+      {
+        $lookup: {
+          from: "subscription",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
         },
-        isSubscribed: {
-          $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-            then: true,
-            else: false,
+      },
+      {
+        $lookup: {
+          from: "subscription",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: {
+            $size: "$subscribers",
+          },
+          channelSubscribedToCount: {
+            $size: "$subscribedTo",
+          },
+          isSubscribed: {
+            $cond: {
+              if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+              then: true,
+              else: false,
+            },
           },
         },
+      },
+      {
         $project: {
           fullname: 1,
           username: 1,
@@ -375,70 +380,114 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
           email: 1,
         },
       },
-    },
-  ]);
-  console.log("channel", channel);
+    ]);
+    if (!channel.length) {
+      throw new ApiError(404, "Channel does not exist");
+    }
 
-  if (!channel.length) {
-    throw new ApiError(404, "Channel does not exist");
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, channel[0], "User channel fetched successfully")
+      );
+  } catch (error) {
+    throw new ApiError(500, error);
   }
-
-  res
-    .status(200)
-    .json(
-      new ApiResponse(200, channel[0], "User channel fetched successfully")
-    );
 });
 
 const getwhatchHistory = asyncHandler(async (req, res) => {
-  const user = await User.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(req.user._id),
+  try {
+    // ! Error handling for aggregation pipeline
+    /*  
+    const user = await User.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.user._id),
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "Video",
-        localField: "whatchHistory",
-        foreignField: "_id",
-        as: "whatchHistory",
-        pipeline: [
-          {
-            $lookup: {
-              from: "User",
-              localField: "owner",
-              foreignField: "_id",
-              as: "owner",
-              pipeline: [
-                {
-                  fullname: 1,
-                  username: 1,
-                  avatar: 1,
-                },
-              ],
-            },
-          },
-          {
-            $addFields: {
-              owner: {
-                $first: "$owner",
+      {
+        $lookup: {
+          from: "Video",
+          localField: "whatchHistory",
+          foreignField: "_id",
+          as: "whatchHistory",
+          pipeline: [
+            {
+              $lookup: {
+                from: "User",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                  {
+                    fullname: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                ],
               },
             },
-          },
-        ],
+            {
+              $addFields: {
+                owner: {
+                  $first: "$owner",
+                },
+              },
+            },
+          ],
+        },
       },
-    },
-  ]);
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        user[0].whatchHistory,
-        "watch history fetched successfully"
-      )
-    );
+    ]);
+    */
+    const user = await User.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $lookup: {
+          from: "Video",
+          localField: "whatchHistory",
+          foreignField: "_id",
+          as: "whatchHistory",
+        },
+      },
+      {
+        $unwind: "$whatchHistory",
+      },
+      {
+        $lookup: {
+          from: "User",
+          localField: "whatchHistory.owner",
+          foreignField: "_id",
+          as: "whatchHistory.owner",
+        },
+      },
+      {
+        $unwind: "$whatchHistory.owner",
+      },
+      {
+        $project: {
+          "whatchHistory.owner.fullname": 1,
+          "whatchHistory.owner.username": 1,
+          "whatchHistory.owner.avatar": 1,
+        },
+      },
+    ]);
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          user[0].whatchHistory,
+          "watch history fetched successfully"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(500, error);
+  }
 });
 
 const DeleteAccount = asyncHandler(async (req, res) => {
